@@ -1,0 +1,70 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #fafafa;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 500px;
+  margin: 50px auto;
+  border-radius: 10px;
+  background: white;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+.comment-blur {
+  position: relative;
+  height: 200px;
+  overflow: hidden;
+}
+
+.blur-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(8px);
+}
+
+.comment-box {
+  padding: 20px;
+}
+
+.comment-box p {
+  margin: 0 0 10px;
+}
+
+.actions {
+  margin-top: 10px;
+}
+
+#komentar {
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+button {
+  background-color: #3897f0;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background 0.3s ease;
+}
+
+button:hover {
+  background-color: #2f80ed;
+}
+
+#hasil {
+  margin-top: 10px;
+  font-weight: bold;
+  font-size: 15px;
+}
