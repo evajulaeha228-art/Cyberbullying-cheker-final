@@ -1,25 +1,31 @@
-from flask import Flask, request, jsonify
-from flask_cors import CORS
+import streamlit as st
 import pickle
 
-app = Flask(__name__)
-CORS(app)
-
+# Load model dan vectorizer
 with open('model.pkl', 'rb') as f:
     model = pickle.load(f)
 
 with open('vectorizer.pkl', 'rb') as f:
     vectorizer = pickle.load(f)
 
-@app.route('/klasifikasi', methods=['POST'])
-def klasifikasi():
-    data = request.json
-    komentar = data.get('komentar', '')
+# Judul aplikasi
+st.title("Deteksi Cyberbullying di Komentar Instagram")
+st.write("Masukkan komentar untuk mendeteksi apakah termasuk cyberbullying atau bukan.")
 
-    vektor = vectorizer.transform([komentar])
-    prediksi = model.predict(vektor)[0]
+# Input teks dari user
+komentar = st.text_area("Masukkan komentar:")
 
-    return jsonify({'label': prediksi})
+# Tombol prediksi
+if st.button("Deteksi"):
+    if komentar.strip() == "":
+        st.warning("Silakan masukkan komentar terlebih dahulu.")
+    else:
+        # Ubah komentar menjadi vektor
+        vektor = vectorizer.transform([komentar])
+        prediksi = model.predict(vektor)[0]
 
-if __name__ == '__main__':
-    app.run(port=5000)
+        # Tampilkan hasil
+        if prediksi == "Cyberbullying":
+            st.error("🚨 Komentar terdeteksi sebagai **Cyberbullying**")
+        else:
+            st.success("✅ Komentar **Bukan Cyberbullying**")
