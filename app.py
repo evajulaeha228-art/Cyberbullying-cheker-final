@@ -1,143 +1,206 @@
+# app.py
 import streamlit as st
+from pathlib import Path
+import re
 import pickle
+from typing import Tuple
 
-# Load model & vectorizer
-@st.cache_resource
-def load_model():
-    with open('model.pkl', 'rb') as f:
-        model = pickle.load(f)
-    with open('vectorizer.pkl', 'rb') as f:
-        vectorizer = pickle.load(f)
-    return model, vectorizer
+# --------- Helpers / Simple Classifier (fallback) ----------
+OFFENSIVE_WORDS = {
+    "goblok","anjing","bego","tolol","idiot","bodoh","jelek","gk","gk bagus","kntl","asu",
+    "kampret","tolol","sange","tai","brengsek","brengsek","kontol","ngentot"
+}
 
-model, vectorizer = load_model()
+def simple_rule_based(text: str) -> int:
+    """Return 1 if bullying, 0 if non-bullying using a tiny keyword heuristic."""
+    text_low = text.lower()
+    # Remove punctuation for matching
+    words = re.findall(r"\w+", text_low)
+    for w in words:
+        if w in OFFENSIVE_WORDS:
+            return 1
+    # short heuristic: many insulting patterns
+    insulting_patterns = ["jelek", "bodoh", "goblok", "kamu tolol", "gk becus", "mampus"]
+    for p in insulting_patterns:
+        if p in text_low:
+            return 1
+    return 0
 
-# CSS Instagram Style
-st.markdown("""
+def load_model(model_path: Path, vect_path: Path = None):
+    """Load pickled model and optionally vectorizer. Return (model, vectorizer or None)."""
+    model = None
+    vect = None
+    if model_path.exists():
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+    if vect_path and vect_path.exists():
+        with open(vect_path, "rb") as f:
+            vect = pickle.load(f)
+    return model, vect
+
+def classify(text: str, mode: str, model_tuple: Tuple = (None, None)) -> Tuple[int, float]:
+    """
+    Return label (1 bullying / 0 non-bullying) and confidence-like score (0-1).
+    If using model mode, model_tuple = (model, vectorizer)
+    """
+    if mode == "Model" and model_tuple[0] is not None:
+        model, vect = model_tuple
+        if vect is None:
+            # If model expects raw text (rare) - try direct predict_proba if available
+            try:
+                proba = model.predict_proba([text])[0]
+                label = int(proba[1] > 0.5)
+                conf = float(proba[label])
+                return label, conf
+            except Exception:
+                # fallback to simple rule
+                return simple_rule_based(text), 0.6
+        else:
+            X = vect.transform([text])
+            try:
+                proba = model.predict_proba(X)[0]
+                label = int(proba[1] > 0.5)
+                conf = float(proba[label])
+                return label, conf
+            except Exception:
+                # fallback to model.predict if no predict_proba
+                label = int(model.predict(X)[0])
+                return label, 0.8
+    else:
+        lbl = simple_rule_based(text)
+        conf = 0.75 if lbl == 1 else 0.85
+        return lbl, conf
+
+# --------- Streamlit UI ----------
+st.set_page_config(page_title="IG-like Cyberbullying Demo", layout="wide")
+
+# Custom CSS to mimic Instagram-ish layout + colored labels
+st.markdown(
+    """
     <style>
-    .insta-card {
-        max-width: 500px;
-        margin: auto;
-        border: 1px solid #dbdbdb;
-        border-radius: 12px;
-        background: white;
-        font-family: Arial, sans-serif;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    }
-    .header {
-        display: flex;
-        align-items: center;
-        padding: 10px;
-    }
-    .profile-pic {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        margin-right: 10px;
-        background: #ddd;
-    }
-    .username {
-        font-weight: bold;
-    }
-    .photo {
-        width: 100%;
-        border-top: 1px solid #eee;
-        border-bottom: 1px solid #eee;
-    }
-    .actions {
-        padding: 10px;
-        font-size: 20px;
+    /* layout */
+    .main { padding: 0 24px 24px 24px; }
+    .left, .right { background: #0f0f10; }
+    .ig-logo {
+        position: fixed; top: 12px; right: 36px; z-index: 9999;
+        font-weight:700; color: #ffffff; font-size:18px;
     }
     .comment-box {
-        padding: 5px 10px;
-        font-size: 15px;
+        border-radius:10px; padding:12px; margin-bottom:8px;
     }
-    .blur {
-        color: transparent;
-        text-shadow: 0 0 8px rgba(0,0,0,0.5);
-        user-select: none;
+    .bully {
+        background: linear-gradient(90deg,#ffdde1,#ff9a9e);
+        border-left:4px solid #ff4b5c;
+        color:#3b0b0b;
     }
+    .nobully {
+        background: linear-gradient(90deg,#cfe9ff,#9ad0ff);
+        border-left:4px solid #2f8fff;
+        color:#05283a;
+    }
+    .comment-meta{ font-size:13px; color:#6b6f76; margin-bottom:6px;}
+    .comment-text{ font-size:15px; margin-bottom:6px; white-space:pre-wrap; }
+    .conf-pill{ font-size:12px; padding:4px 8px; border-radius:999px; background:rgba(0,0,0,0.06); }
+    /* center post size */
+    .post-img { max-width:720px; width:100%; border-radius:10px; }
+    /* hide streamlit default menu button text */
     </style>
-""", unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
-# Inisialisasi session state untuk daftar komentar
-if "comments" not in st.session_state:
-    st.session_state.comments = []
+# IG logo top-right
+st.markdown('<div class="ig-logo">Instagram</div>', unsafe_allow_html=True)
 
-if "show_comment" not in st.session_state:
-    st.session_state.show_comment = {}
+# Layout columns: left nav, main feed, right sidebar
+left_col, main_col, right_col = st.columns([1, 2.4, 1])
 
-# Judul Aplikasi
-st.title("📸 Instagram Cyberbullying Detector")
+with left_col:
+    st.write("")  # left nav mock
+    st.markdown("**Home**\n\nSearch\n\nExplore\n\nReels\n\nMessages\n\nNotifications\n\nCreate\n\nDashboard\n\nProfile", unsafe_allow_html=True)
 
-# Upload Foto
-foto = st.file_uploader("Upload foto postingan", type=["jpg", "jpeg", "png"])
+with main_col:
+    st.markdown("### ")
+    # Stories mock row
+    st.markdown("**Stories**")
+    cols = st.columns(6)
+    for i, c in enumerate(cols):
+        with c:
+            st.image("https://images.unsplash.com/photo-1544005313-94ddf0286df2?q=80&w=200", width=72)
 
-# Input komentar
-komentar = st.text_input("Tulis komentar...")
-
-if st.button("Kirim Komentar"):
-    if komentar.strip() != "":
-        # Prediksi komentar
-        vektor = vectorizer.transform([komentar])
-        prediksi = model.predict(vektor)[0]
-
-        # Simpan ke daftar komentar
-        st.session_state.comments.append({
-            "user": "user123",
-            "text": komentar,
-            "label": prediksi
-        })
-    else:
-        st.warning("Komentar tidak boleh kosong!")
-
-# --- Tampilan Postingan Instagram ---
-st.markdown('<div class="insta-card">', unsafe_allow_html=True)
-
-# Header Postingan
-st.markdown("""
-    <div class="header">
-        <div class="profile-pic"></div>
-        <div class="username">user_ig</div>
-    </div>
-""", unsafe_allow_html=True)
-
-# Foto Postingan
-if foto:
-    st.image(foto, use_column_width=True)
-else:
-    st.image("https://via.placeholder.com/500x300.png?text=Foto+Instagram", use_column_width=True)
-
-# Actions ❤️ 🔁 💬
-st.markdown("""
-    <div class="actions">
-        ❤️  🔁  💬
-    </div>
-""", unsafe_allow_html=True)
-
-# Daftar komentar
-st.write("### Komentar:")
-
-for i, c in enumerate(st.session_state.comments):
-    komentar_tampil = c["text"]
-
-    if c["label"] == "Cyberbullying" and not st.session_state.show_comment.get(i, False):
-        komentar_tampil = f"<span class='blur'>{komentar_tampil}</span>"
-
-    st.markdown(f"""
-        <div class="comment-box">
-            <b>{c['user']}</b>: {komentar_tampil} <br>
-            <span style="font-size:12px; color:{'red' if c['label']=='Cyberbullying' else 'green'};">
-                {'🚨 Cyberbullying' if c['label']=='Cyberbullying' else '✅ Aman'}
-            </span>
-        </div>
+    st.markdown("---")
+    # Post area: image and right-side comment panel (we'll render comments under the post)
+    st.markdown("""
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div style="flex:1;">
     """, unsafe_allow_html=True)
 
-    # Tombol tampilkan komentar asli kalau terdeteksi cyberbullying
-    if c["label"] == "Cyberbullying" and not st.session_state.show_comment.get(i, False):
-        if st.button(f"Tampilkan komentar asli #{i}"):
-            st.session_state.show_comment[i] = True
-            st.experimental_rerun()
+    st.image("https://images.unsplash.com/photo-1535016120720-40c646be5580?q=80&w=1200", use_column_width=True, caption="Postingan - contoh")
 
-st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # Input form for comment
+    st.markdown("### Tulis Komentar")
+    with st.form("comment_form", clear_on_submit=True):
+        input_comment = st.text_area("Masukkan komentar...", height=80)
+        submitted = st.form_submit_button("Kirim & Deteksi")
+        st.write("")  # spacing
+
+    # Model upload / selection options
+    st.sidebar.markdown("## Pengaturan Detektor")
+    mode = st.sidebar.selectbox("Mode Deteksi", ["Rule-based (cepat)", "Model"])
+    model_obj = (None, None)
+    if mode == "Model":
+        st.sidebar.info("Unggah file pickle model (mis. model.pkl) dan vectorizer (vectorizer.pkl jika ada).")
+        model_file = st.sidebar.file_uploader("Model (.pkl)", type=["pkl","pickle"])
+        vect_file = st.sidebar.file_uploader("Vectorizer (.pkl)", type=["pkl","pickle"])
+        if model_file:
+            try:
+                model = pickle.load(model_file)
+                vect = pickle.load(vect_file) if vect_file else None
+                model_obj = (model, vect)
+                st.sidebar.success("Model berhasil dimuat.")
+            except Exception as e:
+                st.sidebar.error(f"Gagal memuat model: {e}")
+    else:
+        st.sidebar.info("Mode rule-based menggunakan kata kunci sederhana untuk deteksi bullying.")
+
+    # Session state for comments
+    if "comments" not in st.session_state:
+        st.session_state["comments"] = []  # list of dicts: {text,label,conf,author}
+
+    # On submit: classify and append
+    if submitted and input_comment and input_comment.strip():
+        label, conf = classify(input_comment, "Model" if mode=="Model" else "Rule-based", model_obj)
+        # simple author placeholder
+        author = "you"
+        st.session_state.comments.insert(0, {"text": input_comment.strip(), "label": int(label), "conf": float(conf), "author": author})
+
+    # Render comments panel (mimic right-side overlay style)
+    st.markdown("### Komentar")
+    for c in st.session_state.comments:
+        if c["label"] == 1:
+            css_class = "comment-box bully"
+            tag = "Bullying"
+        else:
+            css_class = "comment-box nobully"
+            tag = "Non-Bullying"
+        comment_html = f"""
+        <div class="{css_class}">
+            <div class="comment-meta"><strong>{c['author']}</strong> • <span class="conf-pill">{tag} • {c['conf']:.2f}</span></div>
+            <div class="comment-text">{st.session_state.get('highlight_prefix','')}{c['text']}</div>
+        </div>
+        """
+        st.markdown(comment_html, unsafe_allow_html=True)
+
+with right_col:
+    st.markdown("**va_zulaikha01**  \nEva Julaeha  \n[Switch]")
+    st.markdown("---")
+    st.markdown("**Suggested for you**")
+    for i in range(4):
+        st.markdown(f"- user_suggested_{i+1}  • Follow")
+
+# Footer / notes
+st.markdown("---")
+st.markdown("UI demo ini meniru layout Instagram. Untuk menggunakan model nyata, pilih mode *Model* dan unggah file pickle model beserta vectorizernya (jika ada).")
 
