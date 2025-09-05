@@ -7,7 +7,6 @@ with open('model.pkl', 'rb') as model_file:
 with open('vectorizer.pkl', 'rb') as vectorizer_file:
     vectorizer = pickle.load(vectorizer_file)
 
-# Fungsi deteksi komentar
 def proses_komentar(komentar):
     komentar_tertransformasi = vectorizer.transform([komentar])
     prediksi = model.predict(komentar_tertransformasi)[0]
@@ -62,12 +61,20 @@ def splash_screen():
 
 # ================= MAIN PAGE =================
 def main_page():
-    # Layout: 2 kolom (sidebar kiri + konten utama)
     col1, col2 = st.columns([1, 2])
 
     # Sidebar kiri
     with col1:
-        st.markdown("## Instagram")
+        st.markdown(
+            """
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <img src="8e1652f1-a117-45f8-8e75-bff02a897365.png" width="30">
+                <h2 style="margin:0;">Instagram</h2>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        st.markdown("---")
         st.markdown("🏠 Home")
         st.markdown("🔍 Search")
         st.markdown("🧭 Explore")
@@ -77,14 +84,11 @@ def main_page():
         st.markdown("➕ Create")
         st.markdown("👤 Profile")
 
-    # Konten utama (postingan IG)
+    # Konten utama
     with col2:
         st.markdown("### va_zulaikha01")
-
-        # Foto postingan (gunakan gambar lesti.jpg)
         st.image("lesti.jpg", use_container_width=True)
 
-        # Baris ikon (❤️ 💬 📤 🔖)
         colA, colB, colC, colD = st.columns([1,1,1,5])
         with colA:
             if st.button("❤️ Like"):
@@ -98,7 +102,6 @@ def main_page():
 
         st.markdown(f"**{st.session_state.likes} suka**")
 
-        # Input komentar
         komentar_pengguna = st.text_input("Tambahkan komentar...")
         if st.button("Kirim 📤"):
             if komentar_pengguna.strip():
@@ -112,7 +115,6 @@ def main_page():
             else:
                 st.warning("Silakan masukkan komentar terlebih dahulu.")
 
-        # Komentar dengan scroll
         st.markdown("#### Komentar")
         st.markdown(
             """
@@ -149,7 +151,6 @@ def main_page():
             komentar_html += f'<div class="{jenis}">{teks}</div>'
         komentar_html += '</div>'
         st.markdown(komentar_html, unsafe_allow_html=True)
-
 
 # ================= LOGIC =================
 if not st.session_state.started:
