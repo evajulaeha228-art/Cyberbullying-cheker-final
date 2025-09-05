@@ -52,11 +52,6 @@ def splash_screen():
     st.markdown("##")
     st.markdown("### Welcome to the Cyberbullying Detection System")
 
-    # Tombol Masuk
-    if st.button("Masuk", key="login_button", help="Klik untuk masuk"):
-        time.sleep(0.5)  # Simulasi loading
-        st.experimental_rerun()
-
 # Tampilan Halaman Utama
 def main_page():
     st.markdown(
@@ -93,6 +88,12 @@ def main_page():
             background-color: #d4edda;
             color: #155724;
         }
+        .post {
+            padding: 20px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
         </style>
         ''',
         unsafe_allow_html=True
@@ -108,37 +109,64 @@ def main_page():
     # Menampilkan Nama Akun Pengguna
     st.markdown("### Va_Zulaikha01")
 
-    # Postingan
-    st.image("https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg", width=300)
-    st.text("Sunset at the beach 🌅")
+    # Postingan 1
+    with st.container():
+        st.markdown("#### Postingan 1")
+        st.image("https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg", width=300)
+        st.text("Sunset at the beach 🌅")
 
-    # Form komentar
-    komentar_pengguna = st.text_area("Tulis komentar di sini:")
+        # Form komentar
+        komentar_pengguna = st.text_area("Tulis komentar di sini:", key="comment1")
 
-    # Tombol Deteksi Komentar
-    if st.button("Deteksi Komentar"):
-        if komentar_pengguna.strip():
-            prediksi = proses_komentar(komentar_pengguna)
-            if prediksi == "Cyberbullying":
-                st.markdown(f'<div class="comment bullying">🚨 Komentar ini terdeteksi sebagai **Cyberbullying**</div>', unsafe_allow_html=True)
+        # Tombol Deteksi Komentar
+        if st.button("Deteksi Komentar 1", key="detect1"):
+            if komentar_pengguna.strip():
+                prediksi = proses_komentar(komentar_pengguna)
+                if prediksi == "Cyberbullying":
+                    st.markdown(f'<div class="comment bullying">🚨 Komentar ini terdeteksi sebagai **Cyberbullying**</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="comment non-bullying">✅ Komentar ini **Bukan Cyberbullying**</div>', unsafe_allow_html=True)
             else:
-                st.markdown(f'<div class="comment non-bullying">✅ Komentar ini **Bukan Cyberbullying**</div>', unsafe_allow_html=True)
-        else:
-            st.warning("Silakan masukkan komentar terlebih dahulu.")
+                st.warning("Silakan masukkan komentar terlebih dahulu.")
 
-    # Menampilkan komentar sebelumnya (contoh komentar)
-    st.markdown("### Komentar Terbaru")
-    st.markdown(f'<div class="comment bullying">🚨 @user: Kamu jelek banget!</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="comment non-bullying">✅ @user2: Apa kabar? Semangat terus ya!</div>', unsafe_allow_html=True)
+        # Menampilkan komentar sebelumnya (contoh komentar)
+        st.markdown("### Komentar Terbaru")
+        st.markdown(f'<div class="comment bullying">🚨 @user: Kamu jelek banget!</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="comment non-bullying">✅ @user2: Apa kabar? Semangat terus ya!</div>', unsafe_allow_html=True)
 
-# Menampilkan Splash Screen atau Halaman Utama
+    # Postingan 2
+    with st.container():
+        st.markdown("#### Postingan 2")
+        st.image("https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg", width=300)
+        st.text("A day in Paris 🇫🇷")
+
+        # Form komentar
+        komentar_pengguna2 = st.text_area("Tulis komentar di sini:", key="comment2")
+
+        # Tombol Deteksi Komentar
+        if st.button("Deteksi Komentar 2", key="detect2"):
+            if komentar_pengguna2.strip():
+                prediksi = proses_komentar(komentar_pengguna2)
+                if prediksi == "Cyberbullying":
+                    st.markdown(f'<div class="comment bullying">🚨 Komentar ini terdeteksi sebagai **Cyberbullying**</div>', unsafe_allow_html=True)
+                else:
+                    st.markdown(f'<div class="comment non-bullying">✅ Komentar ini **Bukan Cyberbullying**</div>', unsafe_allow_html=True)
+            else:
+                st.warning("Silakan masukkan komentar terlebih dahulu.")
+
+        # Menampilkan komentar sebelumnya (contoh komentar)
+        st.markdown("### Komentar Terbaru")
+        st.markdown(f'<div class="comment bullying">🚨 @user: Muka kamu jelek banget!</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="comment non-bullying">✅ @user2: Kamu keren kok!</div>', unsafe_allow_html=True)
+
+# **State untuk splash screen**
 if 'started' not in st.session_state:
     st.session_state.started = False
 
 if not st.session_state.started:
     splash_screen()
-    if st.button("Masuk", key="enter_button"):
+    if st.button("Masuk"):
         st.session_state.started = True
-        st.experimental_rerun()
+        st.experimental_rerun()  # Hanya dipanggil saat tombol ditekan
 else:
     main_page()
