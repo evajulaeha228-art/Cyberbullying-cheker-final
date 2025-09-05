@@ -53,7 +53,6 @@ def splash_screen():
     st.markdown('<div class="main">', unsafe_allow_html=True)
     st.image("https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png", width=150)
     st.title("Instagram")
-    st.markdown("##")
     st.markdown("### Welcome to the Cyberbullying Detection System")
 
     if st.button("Masuk"):
