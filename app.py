@@ -167,6 +167,5 @@ if not st.session_state.started:
     splash_screen()
     if st.button("Masuk"):
         st.session_state.started = True
-        st.experimental_rerun()  # Hanya dipanggil saat tombol ditekan
 else:
     main_page()
