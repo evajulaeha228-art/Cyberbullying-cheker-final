@@ -15,10 +15,17 @@ def proses_komentar(komentar):
     prediksi = model.predict(komentar_tertransformasi)[0]
     return prediksi
 
-# Tampilan Splash Screen
+# State untuk komentar & status aplikasi
+if "komentar_list" not in st.session_state:
+    st.session_state.komentar_list = []
+
+if "started" not in st.session_state:
+    st.session_state.started = False
+
+# ------------------- SPLASH SCREEN -------------------
 def splash_screen():
     st.markdown(
-        '''
+        """
         <style>
         .main {
             background-color: white;
@@ -29,7 +36,7 @@ def splash_screen():
             flex-direction: column;
         }
         .button {
-            padding: 15px 30px;
+            padding: 12px 28px;
             background-color: #0095f6;
             color: white;
             border: none;
@@ -41,43 +48,82 @@ def splash_screen():
             background-color: #006d9c;
         }
         </style>
-        ''',
+        """,
         unsafe_allow_html=True
     )
 
-    # Logo Instagram
-    st.image("https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png", width=200)
+    st.markdown('<div class="main">', unsafe_allow_html=True)
+    st.image("https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png", width=150)
     st.title("Instagram")
-    st.markdown("##")
-    st.markdown("### Welcome to the Cyberbullying Detection System")
+    if st.button("Masuk", use_container_width=False):
+        st.session_state.started = True
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# Tampilan Halaman Utama
+# ------------------- HALAMAN UTAMA -------------------
 def main_page():
+    # CSS styling
     st.markdown(
-        '''
+        """
         <style>
-        .header {
+        body {
+            background-color: #fafafa;
+        }
+        .container {
             display: flex;
-            justify-content: space-between;
+            flex-direction: row;
+        }
+        .sidebar {
+            width: 220px;
+            height: 100vh;
+            border-right: 1px solid #dbdbdb;
+            padding: 20px 10px;
+            background-color: white;
+        }
+        .sidebar h1 {
+            font-family: 'Arial Black', sans-serif;
+            font-size: 24px;
+            margin-bottom: 30px;
+        }
+        .menu-item {
+            font-size: 16px;
+            padding: 12px 5px;
+            cursor: pointer;
+        }
+        .menu-item:hover {
+            background-color: #f2f2f2;
+            border-radius: 8px;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .post {
+            width: 500px;
+            background-color: white;
+            border: 1px solid #dbdbdb;
+            border-radius: 3px;
+            margin-top: 20px;
+            padding-bottom: 10px;
+        }
+        .post-header {
+            display: flex;
             align-items: center;
             padding: 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
         }
-        .header img {
-            height: 40px;
-        }
-        .comment-box {
-            width: 100%;
-            height: 60px;
+        .comments {
+            max-height: 200px;
+            overflow-y: scroll;
             padding: 10px;
-            margin-top: 20px;
-        }
-        .comment-section {
-            margin-top: 20px;
         }
         .comment {
-            padding: 10px;
             margin-bottom: 10px;
-            border-radius: 8px;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 14px;
         }
         .bullying {
             background-color: #f8d7da;
@@ -87,51 +133,76 @@ def main_page():
             background-color: #d4edda;
             color: #155724;
         }
+        .post {
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
         </style>
-        ''',
+        """,
         unsafe_allow_html=True
     )
 
-    # Header Instagram
-    col1, col2 = st.columns([1, 9])
-    with col1:
-        st.image("https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png", width=40)
-    with col2:
-        st.markdown("**Instagram**")
-    
-    # Menampilkan Nama Akun Pengguna
-    st.markdown("### Va_Zulaikha01")
+    # Struktur utama
+    st.markdown('<div class="container">', unsafe_allow_html=True)
 
-    # Postingan
-    st.image("https://upload.wikimedia.org/wikipedia/commons/9/95/Instagram_logo_2022.svg", width=300)
-    st.text("Sunset at the beach 🌅")
+    # Sidebar kiri
+    st.markdown(
+        """
+        <div class="sidebar">
+            <h1>Instagram</h1>
+            <div class="menu-item">🏠 Home</div>
+            <div class="menu-item">🔍 Search</div>
+            <div class="menu-item">🧭 Explore</div>
+            <div class="menu-item">🎥 Reels</div>
+            <div class="menu-item">💬 Messages</div>
+            <div class="menu-item">🔔 Notifications</div>
+            <div class="menu-item">➕ Create</div>
+            <div class="menu-item">👤 Profile</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
 
-    # Form komentar
-    komentar_pengguna = st.text_area("Tulis komentar di sini:")
+    # Konten utama (postingan)
+    st.markdown('<div class="content">', unsafe_allow_html=True)
+    st.markdown('<div class="post">', unsafe_allow_html=True)
 
-    # Tombol Deteksi Komentar
-    if st.button("Deteksi Komentar"):
+    # Header akun
+    st.markdown('<div class="post-header">va_zulaikha01</div>', unsafe_allow_html=True)
+
+    # Foto postingan (menggunakan gambar lesti.jpg)
+    st.image("lesti.jpg", use_column_width=True, caption="📸 Lesti Kejora")  # Ganti dengan gambar lokal
+    st.text("hidup harus selalu disyukuri")
+
+    # Input komentar
+    komentar_pengguna = st.text_input("Tambahkan komentar...")
+
+    if st.button("Kirim"):
         if komentar_pengguna.strip():
-            prediksi = proses_komentar(komentar_pengguna)
-            if prediksi == "Cyberbullying":
-                st.markdown(f'<div class="comment bullying">🚨 Komentar ini terdeteksi sebagai **Cyberbullying**</div>', unsafe_allow_html=True)
+            hasil = proses_komentar(komentar_pengguna)
+            if hasil == "Cyberbullying":
+                label = f'🚨 {komentar_pengguna} (Komentar ini terdeteksi sebagai Cyberbullying)'
+                st.session_state.komentar_list.append(("bullying", label))
             else:
-                st.markdown(f'<div class="comment non-bullying">✅ Komentar ini **Bukan Cyberbullying**</div>', unsafe_allow_html=True)
+                label = f'✅ {komentar_pengguna} (Komentar ini Bukan Cyberbullying)'
+                st.session_state.komentar_list.append(("non-bullying", label))
         else:
             st.warning("Silakan masukkan komentar terlebih dahulu.")
 
-    # Menampilkan komentar sebelumnya (contoh komentar)
-    st.markdown("### Komentar Terbaru")
-    st.markdown(f'<div class="comment bullying">🚨 @user: Kamu jelek banget!</div>', unsafe_allow_html=True)
-    st.markdown(f'<div class="comment non-bullying">✅ @user2: Apa kabar? Semangat terus ya!</div>', unsafe_allow_html=True)
+    # Komentar dengan scroll
+    st.markdown('<div class="comments">', unsafe_allow_html=True)
+    for jenis, teks in st.session_state.komentar_list:
+        st.markdown(f'<div class="comment {jenis}">{teks}</div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-# **State untuk splash screen**
-if 'started' not in st.session_state:
-    st.session_state.started = False
+    st.markdown('</div>', unsafe_allow_html=True)  # tutup post
+    st.markdown('</div>', unsafe_allow_html=True)  # tutup content
+    st.markdown('</div>', unsafe_allow_html=True)  # tutup container
 
+# ------------------- LOGIC -------------------
 if not st.session_state.started:
     splash_screen()
-    if st.button("Masuk"):
-        st.session_state.started = True
 else:
     main_page()
