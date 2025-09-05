@@ -68,7 +68,7 @@ def main_page():
         st.markdown(
             """
             <div style="display: flex; align-items: center; gap: 8px;">
-                <img src="8e1652f1-a117-45f8-8e75-bff02a897365.png" width="30">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Instagram_icon.png" width="30">
                 <h2 style="margin:0;">Instagram</h2>
             </div>
             """,
